@@ -251,7 +251,7 @@ namespace SquirrelCli
     internal class SyncHttpOptions : BaseOptions
     {
         public string url { get; private set; }
-        public string basicAuth { get; private set; }
+        public string basicAuth { get; private set; } = "";
         public SyncHttpOptions()
         {
             Add("url=", "Base url to the http location with hosted releases", v => url = v);

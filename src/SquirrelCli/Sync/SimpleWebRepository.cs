@@ -53,7 +53,10 @@ namespace SquirrelCli.Sources
             Console.WriteLine(base64Credentials);
             using (HttpClient client = new HttpClient()) {
                 client.DefaultRequestHeaders.UserAgent.Add(userAgent);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64Credentials);
+
+                if (!String.IsNullOrEmpty(base64Credentials))
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64Credentials);
+
                 return await client.GetStringAsync(uri);
             }
         }
