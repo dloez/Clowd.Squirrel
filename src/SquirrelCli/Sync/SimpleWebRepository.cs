@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using Squirrel;
@@ -19,13 +20,13 @@ namespace SquirrelCli.Sources
 
         public Task DownloadRecentPackages()
         {
-            return SyncRemoteReleases(new Uri(options.url), new DirectoryInfo(options.releaseDir));
+            return SyncRemoteReleases(new Uri(options.url), new DirectoryInfo(options.releaseDir), options.basicAuth);
         }
 
-        static async Task SyncRemoteReleases(Uri targetUri, DirectoryInfo releasesDir)
+        static async Task SyncRemoteReleases(Uri targetUri, DirectoryInfo releasesDir, string basicAuth)
         {
             var releasesUri = Utility.AppendPathToUri(targetUri, "RELEASES");
-            var releasesIndex = await retryAsync(3, () => downloadReleasesIndex(releasesUri));
+            var releasesIndex = await retryAsync(3, () => downloadReleasesIndex(releasesUri, basicAuth));
 
             File.WriteAllText(Path.Combine(releasesDir.FullName, "RELEASES"), releasesIndex);
 
@@ -43,13 +44,19 @@ namespace SquirrelCli.Sources
             }
         }
 
-        static async Task<string> downloadReleasesIndex(Uri uri)
+        static async Task<string> downloadReleasesIndex(Uri uri, string basicAuth)
         {
             Console.WriteLine("Trying to download RELEASES index from {0}", uri);
 
             var userAgent = new System.Net.Http.Headers.ProductInfoHeaderValue("Squirrel", Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            string base64Credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(basicAuth));
+            Console.WriteLine(base64Credentials);
             using (HttpClient client = new HttpClient()) {
                 client.DefaultRequestHeaders.UserAgent.Add(userAgent);
+
+                if (!String.IsNullOrEmpty(base64Credentials))
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64Credentials);
+
                 return await client.GetStringAsync(uri);
             }
         }
